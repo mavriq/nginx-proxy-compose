@@ -1,0 +1,70 @@
+version: '2.4'
+
+volumes:
+  nginx-html: 
+  nginx-certs: 
+  nginx-conf.d: 
+  nginx-vhost.d: 
+  nginx-htpasswd: 
+
+services:
+  nginx-letsencrypt:
+    extends:
+      file: .compose/.lxcfs_mountpoints.yml
+      service: ${LXCFS_MOUNTPOINTS:-disabled}
+    container_name: ${NAME_LETSENCRYPT:-nginx-letsencrypt}
+    image: ${IMAGE_LETSENCRYPT:-jrcs/letsencrypt-nginx-proxy-companion}
+    restart: unless-stopped
+    volumes:
+    - nginx-html:/usr/share/nginx/html
+    - nginx-certs:/etc/nginx/certs
+    - nginx-conf.d:/etc/nginx/conf.d
+    - nginx-vhost.d:/etc/nginx/vhost.d
+    - nginx-htpasswd:/etc/nginx/htpasswd
+    - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+     DEFAULT_EMAIL: ${DEFAULT_EMAIL:-nobody@localhost}
+
+  nginx-proxy:
+    extends:
+      file: .compose/.lxcfs_mountpoints.yml
+      service: ${LXCFS_MOUNTPOINTS:-disabled}
+    container_name: ${NAME_NGINXPROXY:-nginx-proxy}
+    image: ${IMAGE_NGINXGEN:-jwilder/nginx-proxy:0.8.0}
+    restart: unless-stopped
+    labels:
+    - "com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy"
+    network_mode: host
+    volumes:
+    - ./nginx.tmpl:/app/nginx.tmpl:ro
+    - nginx-html:/usr/share/nginx/html
+    - nginx-certs:/etc/nginx/certs
+    - nginx-conf.d:/etc/nginx/conf.d
+    - nginx-vhost.d:/etc/nginx/vhost.d
+    - nginx-htpasswd:/etc/nginx/htpasswd
+    - /var/run/docker.sock:/tmp/docker.sock:ro
+    environment:
+      DHPARAM_GENERATION: "false"
+      RESOLVERS: ${RESOLVERS:-1.1.1.1 1.0.0.1}
+      PROXY_PROTOCOL_SERVER: ${PROXY_PROTOCOL_SERVER}
+      NGINX_EXTRA_LOG_FORMAT: 
+        '{"@timestamp": "$$msec",
+        "time_iso8601": "$$time_iso8601",
+        "host": "$$host",
+        "server": "$$proxy_x_forwarded_addr:$$proxy_x_forwarded_port",
+        "remote": "$$remote_addr:$$remote_port",
+        "realip_remote": "$$realip_remote_addr:$$realip_remote_port",
+        "status": "$$status",
+        "request": "$$request",
+        "remote_user": "$$remote_user",
+        "url": "$$uri",
+        "request_method": "$$request_method",
+        "request_length": "$$request_length",
+        "request_time": "$$request_time",
+        "upstream_addr": "$$upstream_addr",
+        "upstream_status": "$$upstream_status",
+        "upstream_response_time": "$$upstream_response_time",
+        "body_bytes_sent": "$$body_bytes_sent",
+        "http_referer": "$$http_referer",
+        "http_user_agent": "$$http_user_agent"}'
+

@@ -1,0 +1,11 @@
+.idea
+.DS_Store
+.project
+.pydevproject
+*.un~
+*~
+*.swp
+.\#*
+\#*
+/local
+.env
