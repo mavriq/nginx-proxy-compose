@@ -1,11 +1,26 @@
 version: '2.4'
 
 volumes:
-  nginx-html: 
-  nginx-certs: 
-  nginx-conf.d: 
-  nginx-vhost.d: 
-  nginx-htpasswd: 
+  nginx-html:
+  nginx-conf.d:
+  nginx-vhost.d:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${PWD}/nginx/vhost.d
+  nginx-certs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${PWD}/nginx/certs
+  nginx-htpasswd:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${PWD}/nginx/htpasswd
 
 services:
   nginx-letsencrypt:
